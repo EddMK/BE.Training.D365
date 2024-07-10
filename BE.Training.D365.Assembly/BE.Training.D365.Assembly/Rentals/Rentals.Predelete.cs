@@ -1,26 +1,25 @@
-﻿using System.ServiceModel;
-using Microsoft.Xrm.Sdk;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 
-namespace BE.Training.D365.Assembly
+namespace BE.Training.D365.Assembly.Rentals
 {
-    public class RentalsPrecreate : IPlugin
+    internal class Rentals : IPlugin
     {
         public void Execute(IServiceProvider serviceProvider)
         {
             ITracingService tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
-            IPluginExecutionContext context = (IPluginExecutionContext) serviceProvider.GetService(typeof(IPluginExecutionContext));
+            IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
 
             if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
             {
                 Entity target = (Entity)context.InputParameters["Target"];
 
-                if(target.LogicalName == "training_rentals")
+                if (target.LogicalName == "training_rentals")
                 {
                     IOrganizationServiceFactory serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
                     IOrganizationService service = serviceFactory.CreateOrganizationService(context.UserId);
@@ -33,17 +32,14 @@ namespace BE.Training.D365.Assembly
 
                             if (!videoReference.Equals(null))
                             {
+                                tracingService.Trace("inside delete if");
                                 Guid videoId = videoReference.Id;
                                 Entity video = service.Retrieve("training_videos", videoId, new ColumnSet("training_nb_quantity", "training_str_title"));
                                 int quantity = video.GetAttributeValue<int>("training_nb_quantity");
                                 string title = video.GetAttributeValue<string>("training_str_title");
-                                if ((quantity == 0))
-                                {
-                                    tracingService.Trace("Inside If");
-                                    throw new InvalidPluginExecutionException($"No more items available for the selected movie : {title} !");
-                                }
+                                video["training_nb_quantity"] = quantity++;
+                                service.Update(video);
                             }
-
                         }
                     }
                     catch (Exception ex)
