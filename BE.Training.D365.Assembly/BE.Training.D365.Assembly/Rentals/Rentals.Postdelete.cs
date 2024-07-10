@@ -6,24 +6,21 @@ using System.Threading.Tasks;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 
-namespace BE.Training.D365.Assembly.Rentals
+namespace BE.Training.D365.Assembly
 {
-    internal class Rentals : IPlugin
+    public class RentalsPostdelete : IPlugin
     {
         public void Execute(IServiceProvider serviceProvider)
         {
             ITracingService tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
             IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
-
-            if (context.InputParameters.Contains("Target") && context.InputParameters["Target"] is Entity)
+            if (context.PreEntityImages.Contains("rentalPreImage"))
             {
-                Entity target = (Entity)context.InputParameters["Target"];
-
+                Entity target = context.PreEntityImages["rentalPreImage"];
                 if (target.LogicalName == "training_rentals")
                 {
                     IOrganizationServiceFactory serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
                     IOrganizationService service = serviceFactory.CreateOrganizationService(context.UserId);
-
                     try
                     {
                         if (target.Contains("training_lk_videoid"))
@@ -32,12 +29,12 @@ namespace BE.Training.D365.Assembly.Rentals
 
                             if (!videoReference.Equals(null))
                             {
-                                tracingService.Trace("inside delete if");
                                 Guid videoId = videoReference.Id;
                                 Entity video = service.Retrieve("training_videos", videoId, new ColumnSet("training_nb_quantity", "training_str_title"));
                                 int quantity = video.GetAttributeValue<int>("training_nb_quantity");
                                 string title = video.GetAttributeValue<string>("training_str_title");
-                                video["training_nb_quantity"] = quantity++;
+                                quantity++;
+                                video["training_nb_quantity"] = quantity;
                                 service.Update(video);
                             }
                         }

@@ -39,7 +39,6 @@ namespace BE.Training.D365.Assembly
                                 string title = video.GetAttributeValue<string>("training_str_title");
                                 if ((quantity == 0))
                                 {
-                                    tracingService.Trace("Inside If");
                                     throw new InvalidPluginExecutionException($"No more items available for the selected movie : {title} !");
                                 }
                             }
